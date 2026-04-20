@@ -1828,16 +1828,33 @@ window.addEventListener('resize',updateFloatingCalcButton);
 window.addEventListener('hashchange',()=>{handleCalculatorDeepLink();updateFloatingCalcButton();});
 function toggleLang(){lang=lang==='th'?'en':'th';renderAll();syncMapUiText();updateFloatingCalcButton();}
 document.getElementById('adminOverlay').addEventListener('click',e=>{if(e.target===e.currentTarget)closeAdmin();});
-(()=>{
+(async()=>{
   const today=new Date().toISOString().split('T')[0],d3=new Date();d3.setDate(d3.getDate()+3);
   document.getElementById('startDate').min=today;document.getElementById('startDate').value=today;
   document.getElementById('endDate').min=today;document.getElementById('endDate').value=d3.toISOString().split('T')[0];
   const pay=document.getElementById('paymentOption'); if(pay) pay.value='cash';
-  if(gistGetId()){ gistAutoSync(); }
+
+  // Bootstrap latest remote data BEFORE first render so new devices don't need a manual reload.
+  try{
+    if(gistGetId()){
+      const data = await gistFetch();
+      if(data){
+        if(data.consoles) consoles = data.consoles;
+        if(data.images) images = data.images;
+        if(Object.prototype.hasOwnProperty.call(data, 'homeData')){
+          try{ localStorage.setItem('aj_home_sections_v1', JSON.stringify(data.homeData)); }catch(e){}
+        }
+        save();
+      }
+    }
+  }catch(e){
+    console.warn('Initial Gist bootstrap failed:', e);
+  }
+
+  renderAll();
+  handleCalculatorDeepLink();
+  updateFloatingCalcButton();
 })();
-renderAll();
-handleCalculatorDeepLink();
-updateFloatingCalcButton();
 </script>
 
 <style id="aj-merged-console-game-style">
