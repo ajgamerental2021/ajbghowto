@@ -4,6 +4,66 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AJ Game Rental - รายการเครื่อง</title>
+
+<style id="aj-preload-style">
+html.aj-preload-pending body{overflow:hidden;}
+html.aj-preload-pending body>*{opacity:0;pointer-events:none;}
+html.aj-preload-pending body::before{
+  content:'กำลังโหลดข้อมูลล่าสุด...';
+  position:fixed;inset:0;z-index:99999;
+  display:flex;align-items:center;justify-content:center;
+  background:#ffffff;color:#111111;
+  font-family:'Space Grotesk','Sarabun',sans-serif;
+  font-size:18px;font-weight:700;letter-spacing:.2px;
+  opacity:1;
+}
+</style>
+<script id="aj-preload-gist">
+(function(){
+  document.documentElement.classList.add('aj-preload-pending');
+  const DEFAULT_GIST_ID_BOOT = '4e8fb8c04f38df0538dc9172da99887a';
+  const GIST_FILE_BOOT = 'aj_rental_data.json';
+  const HOME_KEY_BOOT = 'aj_home_sections_v1';
+  function normalizeConsoleArrayBoot(value){
+    if(Array.isArray(value)) return value;
+    if(value && typeof value === 'object') return Object.values(value);
+    return [];
+  }
+  window.__ajPreloadGistPromise = (async function(){
+    let gistId = '';
+    let token = '';
+    try{
+      gistId = (localStorage.getItem('aj_gist_id') || DEFAULT_GIST_ID_BOOT || '').trim();
+      token = (localStorage.getItem('aj_gist_token') || '').trim();
+    }catch(e){
+      gistId = DEFAULT_GIST_ID_BOOT || '';
+      token = '';
+    }
+    if(!gistId) return null;
+    const headers = token ? {Authorization:`token ${token}`} : {};
+    const url = `https://api.github.com/gists/${gistId}?t=${Date.now()}`;
+    const r = await fetch(url, {headers, cache:'no-store'});
+    if(!r.ok) return null;
+    const j = await r.json();
+    const raw = j.files && j.files[GIST_FILE_BOOT] && j.files[GIST_FILE_BOOT].content;
+    if(!raw) return null;
+    const data = JSON.parse(raw);
+    try{
+      if(data.consoles) localStorage.setItem('aj_consoles', JSON.stringify(normalizeConsoleArrayBoot(data.consoles)));
+      if(data.images) localStorage.setItem('aj_images', JSON.stringify(data.images || {}));
+      if(data.homeData) localStorage.setItem(HOME_KEY_BOOT, JSON.stringify(data.homeData));
+      if(gistId) localStorage.setItem('aj_gist_id', gistId);
+    }catch(e){}
+    return data;
+  })().catch(function(err){
+    console.error('AJ preload gist failed', err);
+    return null;
+  });
+})();
+window.addEventListener('load', function(){ setTimeout(function(){ document.documentElement.classList.remove('aj-preload-pending'); }, 4500); });
+setTimeout(function(){ document.documentElement.classList.remove('aj-preload-pending'); }, 6500);
+</script>
+
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -401,11 +461,10 @@ footer{background:#0d0d0d;padding:30px 22px;text-align:center;}
   <div class="hero-btns">
     <button class="btn-primary" onclick="scrollToCalculator(true)" id="h-b1">💰 คำนวณค่าเช่า</button>
     <button class="btn-outline" onclick="document.getElementById('consoles').scrollIntoView({behavior:'smooth'})" id="h-b2">🎮 ดูเครื่องทั้งหมด</button>
-    <button class="btn-outline" onclick="window.location.href='game_index_shortcuts_v12.html'" id="h-b3">🕹️ ดูรายชื่อเกมทั้งหมด</button>
+    <button class="btn-outline" onclick="window.location.href='game_index_shortcuts_v12_v3.html'" id="h-b3">🕹️ ดูรายชื่อเกมทั้งหมด</button>
     <button class="btn-outline" onclick="window.location.href='https://ajgamerental2021.github.io/ajboardgame/'" id="h-b4">🎲 ดูรายชื่อบอร์ดเกมทั้งหมด</button>
   </div>
 </section>
-<div class="stats-bg"><div class="stats-wrap"><div class="stats-grid" id="statsGrid"></div></div></div>
 <section class="section" id="consoles">
   <div class="container">
     <div class="sec-tag" id="c-tag">เครื่องเกม</div>
@@ -523,7 +582,7 @@ footer{background:#0d0d0d;padding:30px 22px;text-align:center;}
 </section>
 <footer>
   <div class="foot-logo" id="footLogoTxt">🎮 <em>AJ</em> เช่าเครื่องเกม</div>
-  <p class="foot-p">Line: @ajgame &nbsp;|&nbsp; กรุงเทพฯ และปริมณฑล &nbsp;|&nbsp; Lalamove / Grab Express</p>
+  <p class="foot-p">Line: @ajgame &nbsp;|&nbsp; กรุงเทพฯ และปริมณฑล &nbsp;|&nbsp; 100% Delivery Service</p>
 </footer>
 <div class="overlay" id="mapsHelpOverlay" onclick="if(event.target===this)closeMapsHelp()">
   <div class="modal" style="max-width:760px;">
@@ -558,7 +617,7 @@ const SPEC={PS5:11,SW1:4,SW2:12,VLP:10,VLU:16,VB:17};
 const SWITCH_IDS=new Set([4,12]);
 const VITURE_IDS=new Set([10,16,17]);
 const NO_GAME_BTN=new Set([2,3,6,8,10,16,17]);
-const GAME_PAGE_FILE='game_index_shortcuts_v12.html';
+const GAME_PAGE_FILE='game_index_shortcuts_v12_v3.html';
 const GAME_URL=GAME_PAGE_FILE;
 const PS5_BUNDLES=[
   {id:'vr2',th:'เช่าพร้อม PS VR2',en:'With PS VR2',rate:550,weekly:3500,deposit:3000},
@@ -629,7 +688,7 @@ function canShowGameButton(c){
   return !NO_GAME_BTN.has(Number(c.id));
 }
 function getGamePageBaseUrl(){
-  const raw = String(GAME_PAGE_FILE || GAME_URL || 'game_index_shortcuts_v12.html').trim() || 'game_index_shortcuts_v12.html';
+  const raw = String(GAME_PAGE_FILE || GAME_URL || 'game_index_shortcuts_v12_v3.html').trim() || 'game_index_shortcuts_v12_v3.html';
   try{ return new URL(raw, window.location.href).toString(); }catch(e){ return raw; }
 }
 function buildScopedGameUrl(platformIds, focusId){
@@ -653,7 +712,7 @@ function getSuggestedGameUrl(c){
 window.getSuggestedConsoleGameUrl = getSuggestedGameUrl;
 function getGameButtonUrl(c){
   const raw = (c && c.gameUrl ? String(c.gameUrl) : '').trim();
-  const isDefaultRaw = !raw || /^(?:https?:\/\/ajgamerental2021\.github\.io\/ajgame\/?|game_index(?:\(11\))?\.html|game_index_shortcuts_v12.html)$/i.test(raw);
+  const isDefaultRaw = !raw || /^(?:https?:\/\/ajgamerental2021\.github\.io\/ajgame\/?|game_index(?:\(11\))?\.html|game_index_shortcuts_v12_v3.html)$/i.test(raw);
   return isDefaultRaw ? getSuggestedGameUrl(c) : raw;
 }
 function ensureGameButtonConfig(c){
@@ -687,13 +746,6 @@ function sanitizeConsoles(list){
     return found?{...base,...found}:base;
   });
 }
-
-function getConsoleListSafe(raw){
-  const source = raw !== undefined ? raw : (Array.isArray(window.consoles) ? window.consoles : consoles);
-  if(Array.isArray(source)) return source;
-  if(source && typeof source === 'object') return Object.values(source).filter(v => v && typeof v === 'object');
-  return [];
-}
 function resetConsolesToDefault(saveNow=true){
   consoles=cloneDefaultConsoles();
   consoles.forEach(c=>{ensureConsoleDetails(c);ensureGameButtonConfig(c);});
@@ -703,8 +755,6 @@ let consoles=sanitizeConsoles(safeReadJSON('aj_consoles', cloneDefaultConsoles()
 consoles.forEach(c=>{ensureConsoleDetails(c);ensureGameButtonConfig(c);});
 let images=safeReadJSON('aj_images',{});
 if(!images || typeof images!=='object' || Array.isArray(images)) images={};
-window.consoles = Array.isArray(consoles) ? consoles : getConsoleListSafe(consoles);
-window.images = images;
 let retEnabled=localStorage.getItem('aj_ret_enabled')==='true';
 let lang='th',isAdmin=false,activeType='all',activeBrand='all';
 
@@ -721,10 +771,8 @@ let lang='th',isAdmin=false,activeType='all',activeBrand='all';
 })();
 
 function save(){
-  consoles=sanitizeConsoles(getConsoleListSafe(consoles));
+  consoles=sanitizeConsoles(consoles);
   consoles.forEach(c=>{ensureConsoleDetails(c);ensureGameButtonConfig(c);});
-  window.consoles = consoles;
-  window.images = images;
   localStorage.setItem('aj_consoles',JSON.stringify(consoles));
   try{localStorage.setItem('aj_images',JSON.stringify(images||{}));}catch(e){}
 }
@@ -844,7 +892,7 @@ const GIST_LS  = 'aj_gist_id';
 const TOKEN_LS = 'aj_gist_token';
 const GIST_FILE = 'aj_rental_data.json';
 
-const gistGetId    = ()=> (localStorage.getItem(GIST_LS) || '').trim() || (DEFAULT_GIST_ID || '').trim() || '';
+const gistGetId    = ()=> DEFAULT_GIST_ID || localStorage.getItem(GIST_LS) || '';
 const gistGetToken = ()=> localStorage.getItem(TOKEN_LS) || '';
 const gistSaveId   = id  => localStorage.setItem(GIST_LS,  id);
 const gistSaveToken= tok => localStorage.setItem(TOKEN_LS, tok);
@@ -865,7 +913,7 @@ async function gistFetch(){
   const id = gistGetId(), tok = gistGetToken();
   if(!id) return null;
   const headers = tok ? {Authorization:`token ${tok}`} : {};
-  const r = await fetch(`https://api.github.com/gists/${id}?t=${Date.now()}`, {headers, cache:'no-store'});
+  const r = await fetch(`https://api.github.com/gists/${id}`, {headers});
   if(!r.ok) return null;
   const j = await r.json();
   const raw = j.files?.[GIST_FILE]?.content;
@@ -940,10 +988,8 @@ async function gistAutoSync(){
 // Render
 function renderAll(){
   try{
-    consoles=sanitizeConsoles(getConsoleListSafe(consoles));
+    consoles=sanitizeConsoles(consoles);
     consoles.forEach(c=>{ensureConsoleDetails(c);ensureGameButtonConfig(c);});
-    window.consoles = consoles;
-    window.images = images;
     updateStatic();renderStats();renderFilterTabs();renderConsoles();
     renderSteps();renderCalcSelect();onConsoleChange();onDateChange();
   }catch(err){
@@ -995,7 +1041,8 @@ function renderRetRow(){
 }
 function renderStats(){
   const types=[{k:'all',ic:'🕹️',lb:t('statTotal'),c:'#cc0000'},{k:'console',ic:'🎮',lb:t('statConsole'),c:'#cc0000'},{k:'vr',ic:'🥽',lb:t('statVR'),c:'#6622cc'},{k:'handheld',ic:'💻',lb:t('statHandheld'),c:'#0066cc'},{k:'racing',ic:'🏁',lb:t('statRacing'),c:'#cc6600'}];
-  document.getElementById('statsGrid').innerHTML=types.map(tp=>{
+  const statsHost=document.getElementById('statsGrid'); if(!statsHost) return;
+  statsHost.innerHTML=types.map(tp=>{
     const n=tp.k==='all'?consoles.length:consoles.filter(c=>c.type===tp.k).length;
     return `<div class="stat-card" style="--sc:${tp.c}"><div class="stat-icon">${tp.ic}</div><div class="stat-num">${n}</div><div class="stat-lbl">${tp.lb}</div></div>`;
   }).join('');
@@ -1828,33 +1875,13 @@ window.addEventListener('resize',updateFloatingCalcButton);
 window.addEventListener('hashchange',()=>{handleCalculatorDeepLink();updateFloatingCalcButton();});
 function toggleLang(){lang=lang==='th'?'en':'th';renderAll();syncMapUiText();updateFloatingCalcButton();}
 document.getElementById('adminOverlay').addEventListener('click',e=>{if(e.target===e.currentTarget)closeAdmin();});
-(async()=>{
+(()=>{
   const today=new Date().toISOString().split('T')[0],d3=new Date();d3.setDate(d3.getDate()+3);
   document.getElementById('startDate').min=today;document.getElementById('startDate').value=today;
   document.getElementById('endDate').min=today;document.getElementById('endDate').value=d3.toISOString().split('T')[0];
   const pay=document.getElementById('paymentOption'); if(pay) pay.value='cash';
-
-  // Bootstrap latest remote data BEFORE first render so new devices don't need a manual reload.
-  try{
-    if(gistGetId()){
-      const data = await gistFetch();
-      if(data){
-        if(data.consoles) consoles = data.consoles;
-        if(data.images) images = data.images;
-        if(Object.prototype.hasOwnProperty.call(data, 'homeData')){
-          try{ localStorage.setItem('aj_home_sections_v1', JSON.stringify(data.homeData)); }catch(e){}
-        }
-        save();
-      }
-    }
-  }catch(e){
-    console.warn('Initial Gist bootstrap failed:', e);
-  }
-
-  renderAll();
-  handleCalculatorDeepLink();
-  updateFloatingCalcButton();
 })();
+window.__ajInitialRenderDeferred = true;
 </script>
 
 <style id="aj-merged-console-game-style">
@@ -1894,7 +1921,7 @@ document.getElementById('adminOverlay').addEventListener('click',e=>{if(e.target
 <script id="aj-merged-console-game-script">
 (function(){
   const STORAGE_KEY = 'aj_console_game_picker_state_v1';
-  const iframeSrc = 'game_index_shortcuts_v12.html';
+  const iframeSrc = 'game_index_shortcuts_v12_v3.html';
   let pickerReady = false;
   let adminReady = false;
   let pickerRequestId = null;
@@ -2818,7 +2845,7 @@ document.getElementById('adminOverlay').addEventListener('click',e=>{if(e.target
       subtitleTh: sectionKey === 'highlight' ? 'ใส่ข้อความสั้น ๆ บนรูป 1:1 ได้จากหน้า Admin' : 'เพิ่มเครื่องเกมหรือเกมใหม่ พร้อมลิงก์กดดูต่อได้',
       subtitleEn: sectionKey === 'highlight' ? 'Edit this 1:1 overlay card from Admin.' : 'Add new consoles or games with direct links.',
       image: makePlaceholderData(sectionKey === 'highlight' ? 'AJ Highlight' : 'AJ Update', sectionKey === 'highlight' ? 'highlight' : 'update'),
-      url: sectionKey === 'highlight' ? '?go=calc' : 'game_index_shortcuts_v12.html?platforms=ps45&focus=ps45',
+      url: sectionKey === 'highlight' ? '?go=calc' : 'game_index_shortcuts_v12_v3.html?platforms=ps45&focus=ps45',
       emojiFallback: sectionKey === 'highlight' ? '🔥' : '✨',
       overlayTone: sectionKey === 'highlight' ? 'red' : 'purple'
     };
@@ -2855,7 +2882,7 @@ document.getElementById('adminOverlay').addEventListener('click',e=>{if(e.target
           subtitleTh: 'ตัวอย่างลิงก์เปิดรายการเกมของ PS4 & PS5 โดยตรง',
           subtitleEn: 'Sample direct shortcut to the PS4 & PS5 game list only.',
           image: makePlaceholderData('PS5 Games', 'update'),
-          url: 'game_index_shortcuts_v12.html?platforms=ps45&focus=ps45'
+          url: 'game_index_shortcuts_v12_v3.html?platforms=ps45&focus=ps45'
         }), Object.assign(newItem('updates'), {
           id: makeId(),
           badgeTh: 'New Console',
@@ -2865,7 +2892,7 @@ document.getElementById('adminOverlay').addEventListener('click',e=>{if(e.target
           subtitleTh: 'แก้เป็นรายการใหม่จริงจากหน้า Admin ได้เลย',
           subtitleEn: 'Replace this with a real latest addition from Admin.',
           image: makePlaceholderData('Switch 2', 'update'),
-          url: 'game_index_shortcuts_v12.html?platforms=switch2&focus=switch2'
+          url: 'game_index_shortcuts_v12_v3.html?platforms=switch2&focus=switch2'
         })]
       }
     };
@@ -2906,6 +2933,15 @@ document.getElementById('adminOverlay').addEventListener('click',e=>{if(e.target
     }
   }
   let homeData = loadHomeData();
+
+  window.ajHomeGetData = function(){
+    return normalizeHomeData(loadHomeData());
+  };
+  window.ajHomeSyncFromStorage = function(){
+    homeData = loadHomeData();
+    renderHomeSections();
+    if(document.getElementById('admHS')) renderHomeAdminPanel();
+  };
 
   function saveHomeData(statusText){
     homeData = normalizeHomeData(homeData);
@@ -3090,7 +3126,7 @@ document.getElementById('adminOverlay').addEventListener('click',e=>{if(e.target
     if(!target) return null;
     const slug = slugify(target);
     const flat = flatKey(target);
-    return getConsoleListSafe().find(c => {
+    return (window.consoles || []).find(c => {
       const aliases = getConsoleAliases(c);
       return aliases.includes(target) || aliases.includes(slug) || aliases.includes(flat);
     }) || null;
@@ -3147,7 +3183,7 @@ document.getElementById('adminOverlay').addEventListener('click',e=>{if(e.target
     }
   }
   window.copyConsoleGameShortcut = async function(id){
-    const c = getConsoleListSafe().find(item => Number(item.id) === Number(id));
+    const c = (window.consoles || []).find(item => Number(item.id) === Number(id));
     if(!c) return;
     const ok = await copyTextSafe(getConsoleShortcut(c));
     const statusEl = document.getElementById(HOME_STATUS_KEY);
@@ -3163,7 +3199,7 @@ document.getElementById('adminOverlay').addEventListener('click',e=>{if(e.target
   function decorateAdminConsoleRows(){
     document.querySelectorAll('[id^="adm-row-"]').forEach(row => {
       const id = Number(String(row.id).replace('adm-row-',''));
-      const c = getConsoleListSafe().find(item => Number(item.id) === id);
+      const c = (window.consoles || []).find(item => Number(item.id) === id);
       const btnWrap = row.querySelector('.adm-btns');
       if(!c || !btnWrap || btnWrap.querySelector('.aj-home-shortcut-btn')) return;
       const btn = document.createElement('button');
@@ -3234,7 +3270,7 @@ document.getElementById('adminOverlay').addEventListener('click',e=>{if(e.target
             <div class="fgroup" style="margin-bottom:0;"><label class="flbl">Subtitle (TH)</label><input type="text" id="ajHomeItemSubtitleTh-${sectionKey}-${escAttr(item.id)}" value="${escAttr(item.subtitleTh || '')}"></div>
             <div class="fgroup" style="margin-bottom:0;"><label class="flbl">Subtitle (EN)</label><input type="text" id="ajHomeItemSubtitleEn-${sectionKey}-${escAttr(item.id)}" value="${escAttr(item.subtitleEn || '')}"></div>
           </div>
-          <div class="fgroup" style="margin-top:10px;margin-bottom:0;"><label class="flbl">Link URL</label><input type="text" id="ajHomeUrl-${sectionKey}-${escAttr(item.id)}" value="${escAttr(item.url || '')}" placeholder="game_index_shortcuts_v12.html?platforms=ps45&focus=ps45"></div>
+          <div class="fgroup" style="margin-top:10px;margin-bottom:0;"><label class="flbl">Link URL</label><input type="text" id="ajHomeUrl-${sectionKey}-${escAttr(item.id)}" value="${escAttr(item.url || '')}" placeholder="game_index_shortcuts_v12_v3.html?platforms=ps45&focus=ps45"></div>
         </div>`).join('')}
       </div>
       <div class="aj-home-admin-foot">
@@ -3365,7 +3401,7 @@ document.getElementById('adminOverlay').addEventListener('click',e=>{if(e.target
   }
 
   window.saveEditConsole = function(id){
-    const c = getConsoleListSafe().find(x => Number(x.id) === Number(id)); if(!c) return;
+    const c = (window.consoles || []).find(x => Number(x.id) === Number(id)); if(!c) return;
     const name   = document.getElementById(`ec-name-${id}`)?.value.trim();
     const nameEn = document.getElementById(`ec-nameen-${id}`)?.value.trim();
     const rate   = parseInt(document.getElementById(`ec-rate-${id}`)?.value);
@@ -3505,7 +3541,7 @@ document.getElementById('adminOverlay').addEventListener('click',e=>{if(e.target
 (function(){
   const HOME_KEY = 'aj_home_sections_v1';
   const HOME_STATUS_KEY = 'aj_home_sections_status_v1';
-  const SHORTCUT_FILE = 'game_index_shortcuts_v12.html';
+  const SHORTCUT_FILE = 'game_index_shortcuts_v12_v3.html';
 
   function escAttr(v){
     return String(v == null ? '' : v)
@@ -3904,7 +3940,7 @@ document.getElementById('adminOverlay').addEventListener('click',e=>{if(e.target
     }
   }
   window.copyConsoleGameShortcut = async function(id){
-    const c = getConsoleListSafe().find(item => Number(item.id) === Number(id));
+    const c = (window.consoles || consoles || []).find(item => Number(item.id) === Number(id));
     if(!c) return;
     const shortcut = getConsoleShortcut(c);
     if(!shortcut){
@@ -3924,7 +3960,7 @@ document.getElementById('adminOverlay').addEventListener('click',e=>{if(e.target
   function addShortcutButtons(){
     document.querySelectorAll('[id^="adm-row-"]').forEach(row => {
       const id = Number(String(row.id).replace('adm-row-',''));
-      const c = getConsoleListSafe().find(item => Number(item.id) === id);
+      const c = (window.consoles || consoles || []).find(item => Number(item.id) === id);
       const btnWrap = row.querySelector('.adm-btns');
       if(!c || !btnWrap || btnWrap.querySelector('.aj-home-shortcut-btn')) return;
       const btn = document.createElement('button');
@@ -4086,53 +4122,112 @@ document.getElementById('adminOverlay').addEventListener('click',e=>{if(e.target
 
 
 
-<script id="aj-cloudsync-clean">
+<style id="aj-final-patch-style">
+#how-to.steps-bg{background:transparent;padding:30px 0 6px;}
+#how-to .sec-tag{color:var(--accent)!important;}
+#how-to .sec-h{color:var(--text)!important;}
+#how-to .sec-p{color:var(--text2)!important;}
+#stepsGrid{display:block !important;}
+.calc-guide-collapsible{
+  background:#fff;border:1px solid var(--border);border-left:4px solid var(--accent);
+  border-radius:var(--r);box-shadow:var(--shadow);overflow:hidden;
+}
+.calc-guide-toggle{
+  width:100%;background:#fff;border:none;cursor:pointer;font:inherit;text-align:left;
+  padding:16px 18px;display:flex;align-items:center;justify-content:space-between;gap:16px;
+}
+.calc-guide-toggle:hover{background:#fff7f7;}
+.calc-guide-toggle-main{display:flex;flex-direction:column;gap:4px;min-width:0;}
+.calc-guide-toggle-title{font-size:14px;font-weight:800;color:var(--accent);}
+.calc-guide-toggle-hint{font-size:12px;color:var(--muted);}
+.calc-guide-toggle-icon{font-size:20px;font-weight:800;color:var(--accent);line-height:1;flex-shrink:0;transition:transform .2s ease;}
+.calc-guide-collapsible.open .calc-guide-toggle-icon{transform:rotate(45deg);}
+.calc-guide-body{display:none;padding:0 18px 18px 18px;}
+.calc-guide-collapsible.open .calc-guide-body{display:block;}
+.calc-guide-body-inner{font-size:14px;color:var(--text2);line-height:1.85;}
+.calc-guide-body-inner h3{font-size:14px;font-weight:800;color:var(--accent);margin:0 0 10px;}
+.calc-guide-body-inner p{margin:0;}
+
+#how-to{display:none !important;}
+#calculator #calcGuide{display:block !important;margin-bottom:14px !important;}
+#calculator #calcGuide .calc-guide-body-inner h3{display:none !important;}
+#calculator #calcGuide{display:block !important;}
+
+/* AJ patch v4: single-frame calculator guide */
+#calculator #calcGuide{
+  background:transparent !important;
+  border:none !important;
+  border-left:none !important;
+  padding:0 !important;
+  box-shadow:none !important;
+  margin:0 0 18px !important;
+}
+#calculator #calcGuide .calc-guide-collapsible{margin:0 !important;}
+</style>
+
+<script id="aj-final-stable-patch">
 (function(){
+  const GIST_FILE = 'aj_rental_data.json';
   const HOME_KEY = 'aj_home_sections_v1';
-  const GIST_KEY = 'aj_gist_id';
-  const TOKEN_KEY = 'aj_gist_token';
-  const DEFAULT_GIST_FALLBACK = (typeof DEFAULT_GIST_ID !== 'undefined' && DEFAULT_GIST_ID) ? String(DEFAULT_GIST_ID).trim() : '';
+  const GUIDE_STATE_KEY = 'aj_calc_guide_open_v1';
+
+  function normalizeConsoleArray(value){
+    if(Array.isArray(value)) return value;
+    if(value && typeof value === 'object') return Object.values(value);
+    return [];
+  }
+  function safeImages(value){
+    return value && typeof value === 'object' && !Array.isArray(value) ? value : {};
+  }
+  function getStoredHomeData(){
+    try{
+      return JSON.parse(localStorage.getItem(HOME_KEY) || 'null');
+    }catch(e){ return null; }
+  }
+  function getCurrentHomeData(){
+    try{
+      if(typeof window.ajHomeGetData === 'function') return window.ajHomeGetData();
+    }catch(e){}
+    return getStoredHomeData();
+  }
+  function syncHomeFromStorage(){
+    try{
+      if(typeof window.ajHomeSyncFromStorage === 'function') window.ajHomeSyncFromStorage();
+    }catch(e){
+      console.error('ajHomeSyncFromStorage failed', e);
+    }
+  }
+
+  try{
+    Object.defineProperty(window, 'consoles', {
+      configurable: true,
+      get(){ return normalizeConsoleArray(consoles); },
+      set(v){ consoles = normalizeConsoleArray(v); }
+    });
+    Object.defineProperty(window, 'images', {
+      configurable: true,
+      get(){ return safeImages(images); },
+      set(v){ images = safeImages(v); }
+    });
+  }catch(e){}
 
   function resolveGistId(){
     try{
-      return (localStorage.getItem(GIST_KEY) || '').trim() || DEFAULT_GIST_FALLBACK || '';
+      const localId = (localStorage.getItem('aj_gist_id') || '').trim();
+      const defId = (typeof DEFAULT_GIST_ID !== 'undefined' && DEFAULT_GIST_ID) ? String(DEFAULT_GIST_ID).trim() : '';
+      return localId || defId || '';
     }catch(e){
-      return DEFAULT_GIST_FALLBACK || '';
+      return (typeof DEFAULT_GIST_ID !== 'undefined' && DEFAULT_GIST_ID) ? String(DEFAULT_GIST_ID).trim() : '';
     }
   }
   function resolveToken(){
-    try{ return (localStorage.getItem(TOKEN_KEY) || '').trim(); }catch(e){ return ''; }
+    try{ return (localStorage.getItem('aj_gist_token') || '').trim(); }catch(e){ return ''; }
   }
-  function coerceConsolesList(value){
-    if(Array.isArray(value)) return value;
-    if(value && typeof value === 'object') return Object.values(value).filter(v => v && typeof v === 'object');
-    return [];
-  }
-  function getHomeDataForSync(){
-    try{
-      if(typeof window.__ajGetHomeData === 'function') return window.__ajGetHomeData();
-      if(typeof window.__ajNormalizeHomeData === 'function'){
-        return window.__ajNormalizeHomeData(JSON.parse(localStorage.getItem(HOME_KEY) || 'null'));
-      }
-      return JSON.parse(localStorage.getItem(HOME_KEY) || 'null');
-    }catch(e){
-      return null;
-    }
-  }
-  function applyHomeData(data){
-    try{
-      if(typeof window.__ajSetHomeData === 'function'){
-        window.__ajSetHomeData(data, true);
-        return;
-      }
-    }catch(e){}
-    try{ localStorage.setItem(HOME_KEY, JSON.stringify(data || null)); }catch(e){}
-    try{ if(typeof window.renderHomeSections === 'function') window.renderHomeSections(); }catch(e){}
-  }
-  function setStatus(statusEl, state, msg){
-    if(statusEl) statusEl.textContent = msg;
-    if(typeof ghSetBar === 'function') ghSetBar(state, msg, true);
-  }
+  window.gistGetId = resolveGistId;
+  window.gistGetToken = resolveToken;
+  window.gistSaveId = function(id){ try{ localStorage.setItem('aj_gist_id', String(id || '').trim()); }catch(e){} };
+  window.gistSaveToken = function(token){ try{ localStorage.setItem('aj_gist_token', String(token || '').trim()); }catch(e){} };
+
   function syncGistUi(){
     const gid = resolveGistId();
     const tok = resolveToken();
@@ -4143,62 +4238,51 @@ document.getElementById('adminOverlay').addEventListener('click',e=>{if(e.target
     if(tokEl && tok && !tokEl.value) tokEl.value = tok;
     if(dispEl) dispEl.textContent = gid || '(ยังไม่มี — Push ครั้งแรกเพื่อสร้าง)';
   }
+
   async function fetchGistData(){
     const id = resolveGistId();
     const tok = resolveToken();
     if(!id) return null;
-    const headers = tok ? { Authorization: `token ${tok}` } : {};
-    const res = await fetch(`https://api.github.com/gists/${id}?t=${Date.now()}`, { headers, cache:'no-store' });
-    if(!res.ok){
-      let message = `Gist fetch failed: ${res.status}`;
-      try{
-        const errJson = await res.json();
-        if(errJson && errJson.message) message = errJson.message;
-      }catch(e){}
-      throw new Error(message);
-    }
-    const json = await res.json();
-    const raw = json.files && json.files[GIST_FILE] && json.files[GIST_FILE].content;
+    const headers = tok ? {Authorization:`token ${tok}`} : {};
+    const url = `https://api.github.com/gists/${id}?t=${Date.now()}`;
+    const r = await fetch(url, {headers, cache:'no-store'});
+    if(!r.ok) throw new Error(`Gist fetch failed: ${r.status}`);
+    const j = await r.json();
+    const raw = j.files && j.files[GIST_FILE] && j.files[GIST_FILE].content;
     if(!raw) return null;
     return JSON.parse(raw);
   }
-  function persistCurrentState(){
+
+  function persistLocalState(){
+    try{
+      if(typeof save === 'function') save();
+    }catch(e){}
     try{
       if(typeof window.ajHomeSavePanel === 'function' && document.getElementById('admHS')){
         window.ajHomeSavePanel();
+      }else{
+        const hd = getCurrentHomeData();
+        if(hd) localStorage.setItem(HOME_KEY, JSON.stringify(hd));
       }
     }catch(e){}
-    try{ if(typeof save === 'function') save(); }catch(e){}
-    try{ window.consoles = Array.isArray(consoles) ? consoles : coerceConsolesList(consoles); }catch(e){}
-    try{ window.images = (images && typeof images === 'object' && !Array.isArray(images)) ? images : {}; }catch(e){}
-  }
-  function applyRemoteData(data){
-    if(!data || typeof data !== 'object') return;
-    if(Object.prototype.hasOwnProperty.call(data, 'consoles')){
-      const nextConsoles = coerceConsolesList(data.consoles);
-      consoles = typeof sanitizeConsoles === 'function' ? sanitizeConsoles(nextConsoles) : nextConsoles;
-      window.consoles = consoles;
-    }else{
-      window.consoles = Array.isArray(consoles) ? consoles : coerceConsolesList(consoles);
-    }
-    if(Object.prototype.hasOwnProperty.call(data, 'images') && data.images && typeof data.images === 'object' && !Array.isArray(data.images)){
-      images = data.images;
-      window.images = images;
-    }
-    if(Object.prototype.hasOwnProperty.call(data, 'homeData')){
-      applyHomeData(data.homeData);
-    }
-    try{ if(typeof save === 'function') save(); }catch(e){}
-    try{ if(typeof renderAll === 'function') renderAll(); }catch(e){}
-    try{ if(typeof window.renderHomeSections === 'function') window.renderHomeSections(); }catch(e){}
-    try{ if(typeof renderAdmConsoles === 'function') renderAdmConsoles(); }catch(e){}
-    try{ if(typeof syncMapUiText === 'function') syncMapUiText(); }catch(e){}
   }
 
-  window.gistGetId = function(){ return resolveGistId(); };
-  window.gistGetToken = function(){ return resolveToken(); };
-  window.gistSaveId = function(id){ try{ localStorage.setItem(GIST_KEY, (id || '').trim()); }catch(e){} };
-  window.gistSaveToken = function(tok){ try{ localStorage.setItem(TOKEN_KEY, (tok || '').trim()); }catch(e){} };
+  function applyRemoteData(data){
+    if(!data || typeof data !== 'object') return false;
+    if(data.consoles) consoles = normalizeConsoleArray(data.consoles);
+    if(data.images) images = safeImages(data.images);
+    try{ localStorage.setItem('aj_consoles', JSON.stringify(normalizeConsoleArray(consoles))); }catch(e){}
+    try{ localStorage.setItem('aj_images', JSON.stringify(safeImages(images))); }catch(e){}
+    if(data.homeData){
+      try{ localStorage.setItem(HOME_KEY, JSON.stringify(data.homeData)); }catch(e){}
+    }
+    try{ if(typeof renderAll === 'function') renderAll(); }catch(e){ console.error(e); }
+    syncHomeFromStorage();
+    try{ if(typeof syncMapUiText === 'function') syncMapUiText(); }catch(e){}
+    try{ if(typeof renderAdmConsoles === 'function') renderAdmConsoles(); }catch(e){}
+    syncGistUi();
+    return true;
+  }
 
   window.doGhSaveCfg = function(){
     const idInput = document.getElementById('ghGistIdIn');
@@ -4206,9 +4290,8 @@ document.getElementById('adminOverlay').addEventListener('click',e=>{if(e.target
     const statusEl = document.getElementById('ghAdminStatus');
     const id = ((idInput && idInput.value) || '').trim() || resolveGistId();
     const tok = ((tokInput && tokInput.value) || '').trim();
-    if(!tok){ alert('กรุณาใส่ Token'); return; }
     if(id) window.gistSaveId(id);
-    window.gistSaveToken(tok);
+    if(tok) window.gistSaveToken(tok);
     syncGistUi();
     if(statusEl) statusEl.textContent = '✅ บันทึกแล้ว';
     if(typeof ghSetBar === 'function') ghSetBar('ok','☁️ Gist พร้อมใช้งาน',true);
@@ -4217,144 +4300,344 @@ document.getElementById('adminOverlay').addEventListener('click',e=>{if(e.target
   window.gistPush = async function(statusEl){
     const id = resolveGistId();
     const tok = resolveToken();
-    if(!tok){ setStatus(statusEl, 'err', '❌ ยังไม่ได้ใส่ Token'); return; }
-    persistCurrentState();
-    setStatus(statusEl, 'sync', '⬆️ กำลัง Sync...');
-    const payload = {
-      consoles: Array.isArray(consoles) ? consoles : coerceConsolesList(consoles),
-      images: (images && typeof images === 'object' && !Array.isArray(images)) ? images : {},
-      homeData: getHomeDataForSync()
+    const setS = (s,m) => {
+      if(statusEl) statusEl.textContent = m;
+      if(typeof ghSetBar === 'function') ghSetBar(s,m,true);
     };
+    if(!tok){ setS('err','❌ ยังไม่ได้ใส่ Token'); return; }
     try{
-      let url, method, body;
+      persistLocalState();
+      setS('sync','⬆️ กำลัง Sync...');
+      const payload = {
+        consoles: normalizeConsoleArray(consoles),
+        images: safeImages(images),
+        homeData: getCurrentHomeData()
+      };
+      let url = '', method = '', body = '';
       if(id){
         url = `https://api.github.com/gists/${id}`;
         method = 'PATCH';
-        body = JSON.stringify({ files:{ [GIST_FILE]:{ content: JSON.stringify(payload, null, 2) } } });
+        body = JSON.stringify({ files:{ [GIST_FILE]:{ content: JSON.stringify(payload,null,2) } } });
       }else{
         url = 'https://api.github.com/gists';
         method = 'POST';
-        body = JSON.stringify({ description:'AJ Rental Data', public:false, files:{ [GIST_FILE]:{ content: JSON.stringify(payload, null, 2) } } });
+        body = JSON.stringify({ description:'AJ Rental Data', public:false, files:{ [GIST_FILE]:{ content: JSON.stringify(payload,null,2) } } });
       }
-      const res = await fetch(url, {
+      const r = await fetch(url, {
         method,
-        headers: { Authorization:`token ${tok}`, 'Content-Type':'application/json' },
-        body
+        headers:{ Authorization:`token ${tok}`, 'Content-Type':'application/json' },
+        body,
+        cache:'no-store'
       });
-      const json = await res.json();
-      if(!res.ok){ throw new Error((json && json.message) ? json.message : String(res.status)); }
-      const newId = json.id || id || '';
+      const j = await r.json();
+      if(!r.ok) throw new Error(j && j.message ? j.message : r.status);
+      const newId = j.id || id;
       if(newId) window.gistSaveId(newId);
       syncGistUi();
-      setStatus(statusEl, 'ok', `✅ Sync สำเร็จ — Gist ID: ${newId}`);
+      setS('ok', `✅ Sync สำเร็จ — Gist ID: ${newId}`);
     }catch(e){
-      setStatus(statusEl, 'err', '❌ ' + (e && e.message ? e.message : e));
+      setS('err', '❌ ' + e.message);
     }
   };
-
   window.doGhPushAdmin = async function(){ await window.gistPush(document.getElementById('ghAdminStatus')); };
   window.doGhPushMain = async function(){ await window.gistPush(null); };
-
   window.doGhPull = async function(){
     const statusEl = document.getElementById('ghAdminStatus');
-    setStatus(statusEl, 'sync', '⬇️ กำลังดึงข้อมูล...');
+    if(statusEl) statusEl.textContent = '⬇️ กำลังดึงข้อมูล...';
+    if(typeof ghSetBar === 'function') ghSetBar('sync','⬇️ กำลังดึงข้อมูล...',true);
     try{
       const data = await fetchGistData();
       if(!data){
-        setStatus(statusEl, 'err', '❌ ดึงล้มเหลว ตรวจสอบ Gist ID และ Token');
+        if(statusEl) statusEl.textContent = '❌ ดึงล้มเหลว ตรวจสอบ Gist ID';
+        if(typeof ghSetBar === 'function') ghSetBar('err','❌ ดึงล้มเหลว',true);
         return;
       }
       applyRemoteData(data);
-      syncGistUi();
-      setStatus(statusEl, 'ok', '✅ Pull สำเร็จ!');
+      if(statusEl) statusEl.textContent = '✅ Pull สำเร็จ!';
+      if(typeof ghSetBar === 'function') ghSetBar('ok','✅ ข้อมูลอัปเดตแล้ว',true);
     }catch(e){
-      setStatus(statusEl, 'err', '❌ ' + (e && e.message ? e.message : e));
+      if(statusEl) statusEl.textContent = '❌ ' + e.message;
+      if(typeof ghSetBar === 'function') ghSetBar('err','❌ Error',true);
     }
   };
-
-  window.gistAutoSync = async function(){
+  window.gistAutoSync = async function(opts){
+    const options = opts && typeof opts === 'object' ? opts : {};
     const id = resolveGistId();
-    if(!id) return;
-    if(typeof ghSetBar === 'function') ghSetBar('sync','⟳ กำลังโหลดข้อมูลจาก Gist...',true);
+    if(!id) return null;
+    if(!options.silent && typeof ghSetBar === 'function') ghSetBar('sync','⟳ กำลังโหลดข้อมูลจาก Gist...',true);
     try{
       const data = await fetchGistData();
-      if(data){
-        applyRemoteData(data);
-        if(typeof ghSetBar === 'function') ghSetBar('ok','✅ โหลดข้อมูลล่าสุดจาก Gist แล้ว',true);
-      }else if(typeof ghSetBar === 'function'){
-        ghSetBar('ok','☁️ Gist พร้อม (ไม่มีข้อมูลใหม่)',true);
+      if(data) applyRemoteData(data);
+      if(!options.silent && typeof ghSetBar === 'function'){
+        ghSetBar('ok', data ? '✅ โหลดข้อมูลล่าสุดจาก Gist แล้ว' : '☁️ Gist พร้อม (ไม่มีข้อมูลใหม่)', true);
       }
-      syncGistUi();
+      return data;
     }catch(e){
-      if(typeof ghSetBar === 'function') ghSetBar('err','❌ โหลดจาก Gist ไม่สำเร็จ',true);
+      if(!options.silent && typeof ghSetBar === 'function') ghSetBar('err','❌ โหลดจาก Gist ไม่สำเร็จ',true);
+      return null;
     }
   };
 
-  const origRenderAdminPanel = window.renderAdminPanel;
-  if(typeof origRenderAdminPanel === 'function'){
-    window.renderAdminPanel = function(){
-      const out = origRenderAdminPanel.apply(this, arguments);
-      setTimeout(syncGistUi, 0);
-      return out;
-    };
-  }
-  const origSwTab = window.swTab;
-  if(typeof origSwTab === 'function'){
-    window.swTab = function(btn, pid){
-      const out = origSwTab.apply(this, arguments);
-      if(pid === 'admGH') setTimeout(syncGistUi, 0);
-      return out;
-    };
+  async function bootLatestFirstRender(){
+    let preloadData = null;
+    try{
+      syncGistUi();
+      if(window.__ajPreloadGistPromise){
+        preloadData = await Promise.race([
+          window.__ajPreloadGistPromise,
+          new Promise(resolve => setTimeout(() => resolve(null), 3200))
+        ]);
+      }
+      if(preloadData) applyRemoteData(preloadData);
+      else {
+        try{
+          consoles = normalizeConsoleArray(JSON.parse(localStorage.getItem('aj_consoles') || '[]'));
+          images = safeImages(JSON.parse(localStorage.getItem('aj_images') || '{}'));
+        }catch(e){}
+        try{ if(typeof renderAll === 'function') renderAll(); }catch(e){}
+        syncHomeFromStorage();
+      }
+      try{
+        await Promise.race([
+          window.gistAutoSync ? window.gistAutoSync({silent:true}) : Promise.resolve(null),
+          new Promise(resolve => setTimeout(() => resolve(null), 2800))
+        ]);
+      }catch(e){}
+      try{ if(typeof renderAll === 'function') renderAll(); }catch(e){}
+      syncHomeFromStorage();
+      try{ if(typeof handleCalculatorDeepLink === 'function') handleCalculatorDeepLink(); }catch(e){}
+      try{ if(typeof updateFloatingCalcButton === 'function') updateFloatingCalcButton(); }catch(e){}
+      try{ if(typeof window.refreshAjSummaryActions === 'function') window.refreshAjSummaryActions(); }catch(e){}
+    }finally{
+      document.documentElement.classList.remove('aj-preload-pending');
+    }
   }
 
-  function ensureBootOverlay(){
-    let overlay = document.getElementById('ajBootSyncOverlay');
-    if(overlay) return overlay;
-    overlay = document.createElement('div');
-    overlay.id = 'ajBootSyncOverlay';
-    overlay.style.cssText = 'position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;background:#ffffff;color:#111;font:600 16px/1.4 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;';
-    overlay.innerHTML = '<div style="display:flex;align-items:center;gap:10px;padding:16px 20px;border:1px solid #e2e2e2;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.08);background:#fff;"><span style="width:12px;height:12px;border-radius:999px;background:#cc0000;display:inline-block;animation:ajBootPulse 1s ease-in-out infinite;"></span><span>กำลังโหลดข้อมูลล่าสุด...</span></div>';
-    document.body.appendChild(overlay);
-    if(!document.getElementById('ajBootPulseStyle')){
-      const style = document.createElement('style');
-      style.id = 'ajBootPulseStyle';
-      style.textContent = '@keyframes ajBootPulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(.75);opacity:.45}}';
-      document.head.appendChild(style);
+  document.addEventListener('DOMContentLoaded', function(){
+    syncGistUi();
+    bootLatestFirstRender();
+  });
+})();
+</script>
+
+
+<script id="aj-last-mile-fixes">
+(function(){
+  const GUIDE_STATE_KEY = 'aj_calc_guide_open_v1';
+
+  function isEnLang(){ return typeof lang !== 'undefined' && lang === 'en'; }
+  function guideOpen(){ return window.__ajCalcGuideOpen === true; }
+  function setGuideOpen(next){
+    window.__ajCalcGuideOpen = !!next;
+    try{ sessionStorage.setItem(GUIDE_STATE_KEY, next ? '1' : '0'); }catch(e){}
+  }
+  function guideHint(){ return isEnLang() ? 'More details — click to expand' : 'รายละเอียดเพิ่มเติมคลิก'; }
+  function guideBodyHtml(){
+    if(isEnLang()){
+      return '<p><strong>1)</strong> Select a console by category and model first<br><strong>2)</strong> Choose the rental start date and return date. Minimum rental is 3 days<br><strong>3)</strong> If that model has bundles or accessories, you can add them here<br><strong>4)</strong> If you want a rental contract, keep Additional options as normal and the contract link will appear in the summary<br><strong>5)</strong> If you do not want a rental contract, select <strong>No Rental Contract</strong> in Additional. The deposit will increase based on the stated rules<br><strong>6)</strong> Open Google Maps, choose your delivery location, then paste the link into the <strong>Google Maps delivery address</strong> field<br><strong>7)</strong> Choose games by clicking <strong>Choose / Edit Games</strong> or tick <strong>I will send the game list later</strong><br><strong>8)</strong> When everything looks good, click <strong>Copy Booking Message</strong> and send it via <strong>Line</strong> or <strong>WhatsApp</strong> right away</p>';
     }
-    return overlay;
+    return '<p><strong>1)</strong> เลือกเครื่อง จากหมวดและรุ่นที่ต้องการก่อน<br><strong>2)</strong> เลือกวันเริ่มเช่า และ วันคืนเครื่อง โดยระบบคิดขั้นต่ำ 3 วัน<br><strong>3)</strong> ถ้ารุ่นนั้นมี Bundle หรืออุปกรณ์เสริม สามารถติ๊กเพิ่มได้ในหน้านี้<br><strong>4)</strong> หากต้องการทำสัญญา ให้ปล่อยค่า Additional ตามปกติ แล้วลิงก์สัญญาจะขึ้นในสรุปค่าเช่า<br><strong>5)</strong> ถ้าไม่ทำสัญญาการเช่า ให้เลือก <strong>ไม่ต้องการทำสัญญาการเช่า</strong> ใน Additional ซึ่งค่ามัดจำจะเพิ่มขึ้นตามที่ระบบแจ้ง<br><strong>6)</strong> เปิด Google Maps เลือกสถานที่จัดส่ง แล้วคัดลอกลิงก์มาแปะในช่อง <strong>Google Maps ที่อยู่จัดส่ง</strong><br><strong>7)</strong> เลือกเกม โดยกด <strong>เลือก / แก้ไขรายชื่อเกม</strong> หรือ ติ๊ก <strong>แจ้งรายชื่อเกมภายหลัง</strong><br><strong>8)</strong> เมื่อสรุปเรียบร้อย กด <strong>Copy ข้อความจองเช่า</strong> แล้วส่งไปที่ <strong>Line</strong> ได้ทันที</p>';
   }
-  async function initialSyncAndReveal(){
-    if(window.__ajInitialSyncPromise) return window.__ajInitialSyncPromise;
-    window.__ajInitialSyncPromise = (async function(){
-      try{ document.documentElement.classList.add('aj-initial-sync'); }catch(e){}
-      try{ document.body.style.visibility = 'hidden'; }catch(e){}
-      let overlay = null;
-      try{ overlay = ensureBootOverlay(); }catch(e){}
+  window.__ajCalcGuideOpen = false;
+  function renderGuideBox(){
+    const host = document.getElementById('calcGuide');
+    if(!host) return;
+    const open = guideOpen();
+    host.innerHTML = `
+      <div class="calc-guide-collapsible ${open ? 'open' : ''}" id="ajCalcGuideCollapsibleFinal">
+        <button type="button" class="calc-guide-toggle" onclick="window.toggleAjCalcGuideFinal()">
+          <div class="calc-guide-toggle-main">
+            <div class="calc-guide-toggle-title">${isEnLang() ? '📌 How to use the rental calculator' : '📌 วิธีใช้งานส่วนคำนวณค่าเช่า'}</div>
+            <div class="calc-guide-toggle-hint">${open ? '' : guideHint()}</div>
+          </div>
+          <div class="calc-guide-toggle-icon">${open ? '−' : '+'}</div>
+        </button>
+        <div class="calc-guide-body">
+          <div class="calc-guide-body-inner">${guideBodyHtml()}</div>
+        </div>
+      </div>`;
+    host.style.display = 'block';
+    const howTo = document.getElementById('how-to');
+    if(howTo) howTo.style.display = 'none';
+  }
+  window.toggleAjCalcGuideFinal = function(){ setGuideOpen(!guideOpen()); renderGuideBox(); };
+
+  function fmtAmount(v){
+    try{ return typeof fmt === 'function' ? fmt(v) : ('฿' + Number(v || 0).toLocaleString('en-US')); }
+    catch(e){ return '฿' + Number(v || 0).toLocaleString('en-US'); }
+  }
+  function escapeText(s){ return String(s || ''); }
+  function formatDeadlineLocal(startStr){
+    if(!startStr || !/^\d{4}-\d{2}-\d{2}$/.test(startStr)){
+      return isEnLang() ? 'Please send the game list by 18:00, 1 day before the rental start date.' : 'กรุณาแจ้งรายชื่อเกมภายใน 18.00 น. ก่อนถึงวันเริ่มเช่า 1 วัน';
+    }
+    const [y,m,d] = startStr.split('-').map(Number);
+    const dt = new Date(y, m - 1, d, 18, 0, 0, 0);
+    dt.setDate(dt.getDate() - 1);
+    const dd = String(dt.getDate()).padStart(2,'0');
+    const mm = String(dt.getMonth()+1).padStart(2,'0');
+    const yy = dt.getFullYear();
+    return isEnLang() ? `Please send the game list no later than 18:00 on ${dd}/${mm}/${yy}.` : `กรุณาแจ้งรายชื่อเกมไม่เกิน 18.00 น. ของวันที่ ${dd}/${mm}/${yy}`;
+  }
+  function getGameState(){
+    const cid = Number(document.getElementById('calcConsole')?.value || 0);
+    if(typeof ensureState === 'function'){
+      try{ return ensureState(cid); }catch(e){}
+    }
+    return { games: [], notifyLater: false };
+  }
+  function buildFinalBookingMessage(){
+    const d = window._cd;
+    if(!d) return '';
+    const nl = '\n';
+    const E = {
+      game: String.fromCodePoint(0x1F3AE),
+      phone: String.fromCodePoint(0x1F4F1),
+      fire: String.fromCodePoint(0x1F525),
+      cal: String.fromCodePoint(0x1F4C5),
+      check: String.fromCodePoint(0x2705),
+      money: String.fromCodePoint(0x1F4B0),
+      cash: String.fromCodePoint(0x1F4B5),
+      card: String.fromCodePoint(0x1F4B3),
+      truck: String.fromCodePoint(0x1F69A),
+      pin: String.fromCodePoint(0x1F4CD),
+      memo: String.fromCodePoint(0x1F4DD),
+      warn: String.fromCodePoint(0x26A0),
+      gift: String.fromCodePoint(0x1F381),
+      pray: String.fromCodePoint(0x1F64F)
+    };
+    const state = getGameState();
+    const addonLines = Array.isArray(d.addonLines) ? d.addonLines : [];
+    const addons = addonLines.length ? nl + addonLines.map(a => `  - ${escapeText(a.name)}: ${fmtAmount(a.cost)}`).join(nl) : '';
+    const discLine = d.isRet && d.disc > 0 ? `${nl}  - ${isEnLang() ? 'Returning Customer Discount 10%' : 'ส่วนลดลูกค้าเก่า 10%'}: -${fmtAmount(d.disc)}` : '';
+    const noConLine = d.noCon ? `${nl}${E.warn} ${isEnLang() ? 'No Rental Contract' : 'ไม่ได้ทำสัญญาการเช่า'}` : '';
+    const bundleLine = d.bundleName ? `${nl}${E.gift} Bundle: ${escapeText(d.bundleName)}` : '';
+    const mapsLine = d.maps ? `${nl}${nl}${E.pin} ${isEnLang() ? 'Delivery Address' : 'ที่อยู่จัดส่ง'}: ${escapeText(d.maps)}` : '';
+    const retLine = d.isRet ? `${nl}${E.check} ${isEnLang() ? 'Returning Customer (10% off)' : 'ลูกค้าเก่า (ลด 10%)'}` : '';
+    const contractMsg = d.noCon
+      ? (isEnLang()
+          ? `${nl}${nl}${E.warn} No rental contract selected. The deposit is higher under the stated rules.${nl}If needed, go back to Additional and uncheck it.`
+          : `${nl}${nl}${E.warn} เลือกไม่ทำสัญญาการเช่าแล้ว ค่ามัดจำจะสูงขึ้น${nl}หากต้องการเปลี่ยน สามารถกลับไปเอาติ๊กออกที่ Additional ได้`)
+      : (isEnLang()
+          ? `${nl}${nl}${E.memo} Please complete the rental contract before delivery${nl}${typeof t === 'function' ? t('contractLink') : ''}${nl}If you do not want a contract, select No Rental Contract in Additional.`
+          : `${nl}${nl}${E.memo} กรุณาทำสัญญาการเช่าก่อนนัดส่งเครื่อง${nl}${typeof t === 'function' ? t('contractLink') : ''}${nl}หากไม่ต้องการทำสัญญา ให้ไปเลือกที่ Additional ว่า ไม่ต้องการทำสัญญาการเช่า`);
+    const gameDeadline = formatDeadlineLocal(document.getElementById('startDate')?.value || '');
+    const gameLines = state.notifyLater
+      ? `${nl}${nl}${E.memo} ${isEnLang() ? 'Game list: I will send it later' : 'รายชื่อเกม: แจ้งภายหลัง'}${nl}${gameDeadline}`
+      : (Array.isArray(state.games) && state.games.length
+          ? `${nl}${nl}${E.game} ${isEnLang() ? 'Selected games' : 'รายชื่อเกมที่ต้องการ'}:${nl}${state.games.map((g,i) => `  ${i+1}. ${escapeText(g.name)}${g.platformName ? ` (${escapeText(g.platformName)})` : ''}`).join(nl)}`
+          : '');
+
+    if(isEnLang()){
+      const payLines = d.paymentOption === 'cash'
+        ? `${nl}${E.cash} Pay Cash on Delivery: ${fmtAmount(d.onDelivery)}`
+        : d.paymentOption === 'wise'
+          ? `${nl}${E.card} Transfer Before Delivery: ${fmtAmount(d.upfront)}`
+          : `${nl}${E.card} Transfer Before Delivery: ${fmtAmount(d.upfront)}${nl}${E.truck} Pay on Delivery: ${fmtAmount(d.onDelivery)}`;
+      return `Hello! Game console rental booking ${E.game}${nl}${nl}${E.phone} Console: ${escapeText(d.consoleName)}${bundleLine}${nl}${E.fire} Section: ${escapeText(d.sectionName)}${nl}${E.cal} Start Date: ${escapeText(d.startDate)}${nl}${E.cal} Return Date: ${escapeText(d.endDate)}${nl}${E.cal} Duration: ${escapeText(d.days)} days${retLine}${noConLine}${gameLines}${nl}${nl}${E.money} Cost Summary:${nl}  - Rental: ${fmtAmount(d.rental)}${addons}${discLine}${nl}  - Deposit: ${fmtAmount(d.deposit)}${nl}${nl}${E.money} Total: ${fmtAmount(d.total)}${payLines}${mapsLine}${contractMsg}${nl}${nl}Thank you! ${E.pray}`;
+    }
+    return `สวัสดีครับ/ค่ะ ขอจองเช่าเครื่องเกม ${E.game}${nl}${nl}${E.phone} เครื่อง: ${escapeText(d.consoleName)}${bundleLine}${nl}${E.fire} หมวดเครื่อง: ${escapeText(d.sectionName)}${nl}${E.cal} วันที่เริ่มเช่า: ${escapeText(d.startDate)}${nl}${E.cal} วันคืนเครื่อง: ${escapeText(d.endDate)}${nl}${E.cal} ระยะเวลา: ${escapeText(d.days)} วัน${retLine}${noConLine}${gameLines}${nl}${nl}${E.money} สรุปค่าใช้จ่าย:${nl}  - ค่าเช่า: ${fmtAmount(d.rental)}${addons}${discLine}${nl}  - ค่ามัดจำ: ${fmtAmount(d.deposit)}${nl}${nl}${E.money} ยอดรวมทั้งหมด: ${fmtAmount(d.total)}${nl}${E.card} โอนล่วงหน้า (ยืนยันจอง): ${fmtAmount(d.upfront)}${nl}${E.truck} จ่ายตอนของถึง: ${fmtAmount(d.onDelivery)}${mapsLine}${contractMsg}${nl}${nl}ขอบคุณครับ/ค่ะ ${E.pray}`;
+  }
+  async function copyTextSmart(text){
+    if(!text) return false;
+    try{ await navigator.clipboard.writeText(text); return true; }
+    catch(e){
       try{
-        try{ window.consoles = Array.isArray(consoles) ? consoles : coerceConsolesList(consoles); }catch(e){}
-        try{ window.images = (images && typeof images === 'object' && !Array.isArray(images)) ? images : {}; }catch(e){}
-        syncGistUi();
-        if(resolveGistId()){
-          await window.gistAutoSync();
-        }else{
-          try{ if(typeof renderAll === 'function') renderAll(); }catch(e){}
-          try{ if(typeof window.renderHomeSections === 'function') window.renderHomeSections(); }catch(e){}
-        }
-        syncGistUi();
-      }finally{
-        try{ if(overlay && overlay.remove) overlay.remove(); }catch(e){}
-        try{ document.body.style.visibility = ''; }catch(e){}
-        try{ document.documentElement.classList.remove('aj-initial-sync'); }catch(e){}
-      }
-    })();
-    return window.__ajInitialSyncPromise;
+        const ta = document.createElement('textarea');
+        ta.value = text; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); return true;
+      }catch(err){ return false; }
+    }
   }
-  if(document.readyState === 'loading'){
-    document.addEventListener('DOMContentLoaded', function(){ initialSyncAndReveal(); });
-  }else{
-    setTimeout(function(){ initialSyncAndReveal(); }, 0);
+  window.copyMsg = async function(){
+    const msg = buildFinalBookingMessage();
+    if(!msg) return '';
+    const ok = await copyTextSmart(msg);
+    const btn = document.querySelector('#sumContent .btn-copy');
+    if(btn){
+      const orig = btn.dataset.origLabel || btn.textContent;
+      btn.dataset.origLabel = orig;
+      btn.textContent = ok && typeof t === 'function' ? t('copiedTxt') : orig;
+      if(ok) btn.style.background = '#228833';
+      setTimeout(function(){ btn.textContent = orig; btn.style.background = ''; }, 2200);
+    }
+    return msg;
+  };
+  function jumpToUrl(url){
+    try{ window.location.href = url; }
+    catch(e){ window.open(url, '_blank'); }
   }
-  window.__ajInitialSyncAndReveal = initialSyncAndReveal;
+  window.sendBookingViaLine = async function(){
+    const msg = buildFinalBookingMessage();
+    if(!msg) return;
+    await copyTextSmart(msg);
+    setTimeout(function(){ jumpToUrl('https://line.me/R/msg/text/?' + encodeURIComponent(msg)); }, 60);
+  };
+  window.sendBookingViaWhatsApp = async function(){
+    if(!isEnLang()) return;
+    const msg = buildFinalBookingMessage();
+    if(!msg) return;
+    await copyTextSmart(msg);
+    setTimeout(function(){ jumpToUrl('https://wa.me/66816244715?text=' + encodeURIComponent(msg)); }, 60);
+  };
+  window.refreshAjSummaryActions = function(){
+    const host = document.getElementById('sumContent');
+    if(!host) return;
+    const lineBtn = host.querySelector('.btn-line');
+    if(lineBtn){
+      lineBtn.removeAttribute('href');
+      lineBtn.setAttribute('role', 'button');
+      lineBtn.onclick = function(ev){ ev.preventDefault(); window.sendBookingViaLine(); };
+    }
+    let waBtn = host.querySelector('.btn-wa');
+    if(!isEnLang()){
+      if(waBtn) waBtn.remove();
+      return;
+    }
+    if(!waBtn && lineBtn){
+      waBtn = document.createElement('a');
+      waBtn.className = 'btn-wa';
+      waBtn.href = '#';
+      waBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="#fff" xmlns="http://www.w3.org/2000/svg"><path d="M16.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.66.15-.196.297-.766.966-.94 1.164-.173.199-.346.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.607.134-.133.298-.346.446-.52.149-.174.198-.298.298-.496.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.486.709.306 1.262.489 1.694.625.712.227 1.37.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 6.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 7.988 2.898a9.825 9.825 0 012.893 7.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.097.547 4.142 1.588 5.945L.057 24l7.305-1.654a11.882 11.882 0 005.683 1.448h.005c7.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>' + ((typeof t === 'function' ? t('btnWa') : 'Send via WhatsApp'));
+      lineBtn.insertAdjacentElement('afterend', waBtn);
+    }
+    if(waBtn){
+      waBtn.removeAttribute('href');
+      waBtn.setAttribute('role', 'button');
+      waBtn.onclick = function(ev){ ev.preventDefault(); window.sendBookingViaWhatsApp(); };
+    }
+  };
+
+  if(typeof window.calc === 'function' && !window.calc.__ajLastPatched){
+    const oldCalc = window.calc;
+    const wrapped = function(){
+      const out = oldCalc.apply(this, arguments);
+      setTimeout(renderGuideBox, 0);
+      setTimeout(window.refreshAjSummaryActions, 0);
+      return out;
+    };
+    wrapped.__ajLastPatched = true;
+    window.calc = wrapped;
+  }
+  if(typeof window.toggleLang === 'function' && !window.toggleLang.__ajGuidePatched){
+    const oldToggleLang = window.toggleLang;
+    const wrappedToggle = function(){
+      const out = oldToggleLang.apply(this, arguments);
+      setTimeout(renderGuideBox, 0);
+      setTimeout(window.refreshAjSummaryActions, 0);
+      return out;
+    };
+    wrappedToggle.__ajGuidePatched = true;
+    window.toggleLang = wrappedToggle;
+  }
+
+  document.addEventListener('DOMContentLoaded', function(){
+    setTimeout(renderGuideBox, 0);
+    setTimeout(window.refreshAjSummaryActions, 0);
+  });
+  window.addEventListener('load', function(){
+    setTimeout(renderGuideBox, 0);
+    setTimeout(window.refreshAjSummaryActions, 0);
+  });
 })();
 </script>
 
